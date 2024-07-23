@@ -1,5 +1,6 @@
 import pdfplumber
 
+
 def strip_whitespaces(all_tables):
     new_table = []
     for table in all_tables:
@@ -17,32 +18,42 @@ def strip_whitespaces(all_tables):
             new_table.append(new_table_for_current_table)
     return new_table
 
+
 def convert_to_dict(cleaned_table):
     if len(cleaned_table) >= 2:
-        temporary_dict = {cleaned_table[0][i]: cleaned_table[1][i] for i in range(len(cleaned_table[0]))}
+        headers = cleaned_table[0]
+        values = cleaned_table[1]
+        temporary_dict = {headers[i]: values[i] for i in range(len(headers))}
         return temporary_dict
     else:
         return {}
 
+
 def extract_veh_details(pdf_path):
+    vehicle_details = {}
+    cleaned_tables = []
+
     with pdfplumber.open(pdf_path) as pdf:
         all_tables = []
         # Process only pages 2 and 3
         for page_num in range(1, 3):  # Page numbers are zero-indexed
-            page = pdf.pages[page_num]
-            tables = page.extract_tables()
-            all_tables.extend(tables)
-            #for table in tables:
-             #   if table:  # Ensure the table is not empty
-              #      all_tables.(table)
+            try:
+                page = pdf.pages[page_num]
+                tables = page.extract_tables()
+                all_tables.extend(tables)
+            except IndexError:
+                # Handle cases where the page might not exist
+                print(f"Page {page_num + 1} does not exist in the PDF.")
+
     cleaned_tables = strip_whitespaces(all_tables)
-    vehicle_details = {}
     for cleaned_table in cleaned_tables:
         vehicle_details.update(convert_to_dict(cleaned_table))
+
     return vehicle_details, cleaned_tables
 
+
 # Test with a sample PDF path
-pdf_path = "TataAIG/TataAIG_GCV/GCV_6301862812-00.pdf"
+pdf_path = r"C:\Users\user\pdfreader\TataAIG\TataAIG\TataAIG_GCV_test_pdfs\GCV_6301862812-00.pdf"
 
 # Extract vehicle details and tables
 vehicle_details, cleaned_tables = extract_veh_details(pdf_path)

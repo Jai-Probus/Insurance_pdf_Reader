@@ -1,9 +1,6 @@
-import os
 import re
 from datetime import datetime
 from PyPDF2 import PdfReader
-import pandas as pd
-
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_path):
@@ -17,7 +14,6 @@ def extract_text_from_pdf(pdf_path):
     except Exception as e:
         print(f"Error extracting text from PDF: {e}")
         return None
-
 
 # Function to extract details using regex
 def extract_details(text):
@@ -43,9 +39,8 @@ def extract_details(text):
     details["Insured Name"] = extract_field(r'Insured Name\s*:\s*(.*)', text)
     details["Customer's Phone Number"] = extract_field(r'Customer contact number\s*:\s*(.*)', text)
     details["Customer's Email"] = extract_field(r'\s+([\w\.-]+@[\w\.-]+)', text)
-    details["Insured Address"] = extract_field(r'Address for Communication\s*:\s*([\s\S]*?)(?=4. Vehicle Type)', text).replace('\n',
-                                                                                                                   ', ') if extract_field(
-        r'Address for Communication\s*:\s*([\s\S]*?)(?=Vehicle Type)', text) else 'none'
+    #details["Customer's Email"] = extract_field(r'Email ID\s*:\s*(.*)', text)
+    details["Insured Address"] = extract_field(r'Address for Communication\s*:\s*([\s\S]*?)(?=4. Vehicle Type)', text).replace('\n', ', ') if extract_field(r'Address for Communication\s*:\s*([\s\S]*?)(?=Vehicle Type)', text) else 'none'
     details['Date of Issuance'] = convert_to_yyyymmdd(extract_field(r'Policy Issuance Date\s*:\s*(.*)', text))
 
     # TP cover period
@@ -60,14 +55,14 @@ def extract_details(text):
     cpa_cover_period = extract_field(r'CPA to Owner driver cover Period\s*:\s*(.*)', text)
     details['CPA Cover Start Date'], details['CPA Cover End Date'] = extract_dates(cpa_cover_period)
 
-    details["Customer's Email"] = extract_field(r'\s+([\w\.-]+@[\w\.-]+)', text)
     details['POS Phone Number'] = extract_field(r'POS Number\s*:\s*(\d+)', text)
     details['POS Email'] = extract_field(r'POS Email\s*:\s*([\w\.-]+@[\w\.-]+)', text)
 
+    details["Customer's Email"] = extract_field(r'\s+([\w\.-]+@[\w\.-]+)', text)
+    #details['POS Contact Number'] = extract_field(r'Contact No. of POS\s*:\s*(.*)', text)
     reg_number = extract_field(r'Registration no\s*:\s*(.*)', text)
     reg_number_match = re.search(r'([A-Z]{2})\s*(\d{2})\s*([A-Z]{2,3})\s*(\d+)', reg_number)
-    details[
-        'Registration Number'] = f"{reg_number_match.group(1)}{reg_number_match.group(2)}{reg_number_match.group(3)}{reg_number_match.group(4)}" if reg_number_match else 'none'
+    details['Registration Number'] = f"{reg_number_match.group(1)}{reg_number_match.group(2)}{reg_number_match.group(3)}{reg_number_match.group(4)}" if reg_number_match else 'none'
     reg_auth = extract_field(r'Registration Authority\s*:\s*(.*)', text)
     reg_auth_match = re.search(r'([A-Z]{2})\s*(\d{2})$', reg_auth)
     details['RTO'] = f"{reg_auth_match.group(1)}{reg_auth_match.group(2)}" if reg_auth_match else 'none'
@@ -84,12 +79,11 @@ def extract_details(text):
 
     details['Variant'] = extract_field(r'Variant\s*:\s*(.*)', text)
     details['Year of Manufacturing'] = extract_field(r'Mfg Year\s*:\s*(.*)', text)
-    details['Date of Registration'] = convert_ddmmyyyy_to_yyyymmdd(
-        extract_field(r'Date of Registration\s*:\s*(.*)', text))
+    details['Date of Registration'] = convert_ddmmyyyy_to_yyyymmdd(extract_field(r'Date of Registration\s*:\s*(.*)', text))
     details['Vehicle Type'] = extract_field(r'Vehicle Type\s*:\s*(.*)', text)
     details['Fuel Type'] = extract_field(r'Fuel Type\s*:\s*(.*)', text)
     details['Chassis Number'] = extract_field(r'Chassis number\s*:\s*(.*)', text)
-    details['Engine Number'] = extract_field(r'Engine Number/Battery Number\s*:\s*(.*)', text).rstrip('/')
+    details['Engine Number'] = extract_field(r'Engine Number/Battery Number\s*:\s*([A-z0-9]*)', text).rstrip('/')
     details['Seating Capacity'] = extract_field(r'Seating Capacity \(including driver\)\s*:\s*(.*)', text)
     details['Previous Policy Number'] = extract_field(r"1\. Policy Number\s+(.*?)\s", text)
     details['Previous Insurer Name'] = extract_field(r'Name & address if the Insurer\s*:\s*(.*)', text)
@@ -97,7 +91,8 @@ def extract_details(text):
     details['Total Own Damage Premium (A)'] = extract_field(r'Total Own Damage Premium \(A\)\s*₹\s*([\d,]+\.\d{2})',text)
     details['Total Liability Premium (B)'] = extract_field(r'Total Liability Premium \(B\)\s*₹\s*([\d,]+\.\d{2})', text)
     details['Total Add On Premium (C)'] = extract_field(r'Total Add On Premium \(C\)\s*₹\s*([\d,]+\.\d{2})', text)
-
+    details['Depreciation Reimbursement'] = extract_field(r'Add: Depreciation Reimbursement\s\(TA 16\)[\s]*([\d,]+\.\d{2})', text)
+    details['No Claim Bonus Percentage'] = extract_field(r'Less: No claim bonus\s*\(\d+%\)\s*([0-9]+(?:\.\d{1,2})?)', text)
     details['Net Premium'] = extract_field(r'Net Premium \((?:A\+B\+C|A|B|C)\)\s*₹\s*([\d,]+\.\d{2})', text)
     igst = float(extract_field(r'IGST @18 %\s*₹\s*([\d,]+\.\d{2})', text, '0').replace(',', ''))
     cgst = float(extract_field(r'CGST @9 %\s*₹\s*([\d,]+\.\d{2})', text, '0').replace(',', ''))
@@ -105,10 +100,11 @@ def extract_details(text):
 
     # Calculate total GST
     details['GST'] = igst + cgst + sgst
+
+
     details['Total Premium'] = extract_field(r'Total Policy Premium\s*\s*([\d,]+\.\d{2})', text)
 
     return details
-
 
 def convert_to_yyyymmdd(date_str):
     try:
@@ -117,7 +113,6 @@ def convert_to_yyyymmdd(date_str):
     except ValueError:
         return 'Invalid Date Format'
 
-
 def convert_ddmmyyyy_to_yyyymmdd(date_str):
     try:
         date_obj = datetime.strptime(date_str, '%d/%m/%Y')
@@ -125,23 +120,15 @@ def convert_ddmmyyyy_to_yyyymmdd(date_str):
     except ValueError:
         return 'Invalid Date Format'
 
+# Test with a sample PDF path
+pdf_path = r'C:\Users\user\pdfreader\TataAIG\TataAIG\TataAIG_Two_Wheeler_test_pdfs\6101868452-00.pdf'  # Update with your PDF path
 
-# Main function to process PDFs in a folder and save details to Excel
-def process_pdfs_in_folder(folder_path, output_excel_path):
-    all_details = []
-    for filename in os.listdir(folder_path):
-        if filename.endswith('.pdf'):
-            pdf_path = os.path.join(folder_path, filename)
-            pdf_text = extract_text_from_pdf(pdf_path)
-            details = extract_details(pdf_text)
-            all_details.append(details)
+# Extract text from PDF
+pdf_text = extract_text_from_pdf(pdf_path)
 
-    df = pd.DataFrame(all_details)
-    df.to_excel(output_excel_path, index=False)
+# Extract details using regex
+extracted_details = extract_details(pdf_text)
 
-
-# Test with a folder path containing PDFs
-folder_path = 'test_pdfs'  # Update with your folder path
-output_excel_path = 'Extraction_Test_Excel/Extraction_Test.xlsx'  # Update with your desired output Excel file path
-
-process_pdfs_in_folder(folder_path, output_excel_path)
+# Print extracted details
+for key, value in extracted_details.items():
+    print(f'{key}: {value}')

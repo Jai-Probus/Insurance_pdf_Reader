@@ -38,7 +38,7 @@ def extract_details(text):
     details['Policy Number'] = extract_field(r'Policy No & Certificate No\s*:\s*(\d+)', text)
     details["Insured Name"] = extract_field(r'Insured Name\s*:\s*(.*)', text)
     details["Customer's Phone Number"] = extract_field(r'Customer contact number\s*:\s*(.*)', text)
-    details["Customer's Email"] = extract_field(r'\s+([\w\.-]+@[\w\.-]+)', text)
+   # details["Customer's Email"] = extract_field(r'(?<!\w)(?!IGST@|SGST@|CGST@)([a-zA-Z0-9._-]+(?:\s*\n*\s*)@[a-zA-Z.-]+\.[a-zA-Z]{2,})(?![\w@])', text)
     #details["Customer's Email"] = extract_field(r'Email ID\s*:\s*(.*)', text)
     details["Insured Address"] = extract_field(r'Address for Communication\s*:\s*([\s\S]*?)(?=4. Vehicle Type)', text).replace('\n', ', ') if extract_field(r'Address for Communication\s*:\s*([\s\S]*?)(?=Vehicle Type)', text) else 'none'
     details['Date of Issuance'] = convert_to_yyyymmdd(extract_field(r'Policy Issuance Date\s*:\s*(.*)', text))
@@ -92,7 +92,7 @@ def extract_details(text):
     details['Total Liability Premium (B)'] = extract_field(r'Total Liability Premium \(B\)\s*₹\s*([\d,]+\.\d{2})', text)
     details['Total Add On Premium (C)'] = extract_field(r'Total Add On Premium \(C\)\s*₹\s*([\d,]+\.\d{2})', text)
 
-    details['Net Premium'] = extract_field(r"Net Premium \((A|B|C|\+)*\) ₹\s*([0-9,]+(?:\.\d{1,2})?)", text)
+    details['Net Premium'] = extract_field(r"Net Premium \((?:A|B|C|\+)*\) ₹\s*([0-9,]+(?:\.\d{1,2})?)", text)
     igst = float(extract_field(r'IGST@18%\s*([0-9,]+\.[0-9]+) ₹', text, '0').replace(',', ''))
     cgst = float(extract_field(r'CGST @9%\s*([0-9,]+\.[0-9]+) ', text, '0').replace(',', ''))
     sgst = float(extract_field(r'SGST/UGST @9%\s*([0-9]+\.[0-9]+)', text, '0').replace(',', ''))
@@ -120,7 +120,7 @@ def convert_ddmmyyyy_to_yyyymmdd(date_str):
         return 'Invalid Date Format'
 
 # Test with a sample PDF path
-pdf_path = 'private_car_test_pdfs/6203134159-00.pdf'  # Update with your PDF path
+pdf_path = 'TataAIG_private_car_test_pdfs/6203134362-00.pdf'  # Update with your PDF path
 
 # Extract text from PDF
 pdf_text = extract_text_from_pdf(pdf_path)
