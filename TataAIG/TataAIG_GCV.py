@@ -102,56 +102,39 @@ def extract_details(text):
     return details
 
 
+def normalize_header(header):
+    return ''.join(header.split()).replace('\n', '')
+
 def extract_make_model_variant_body_type(tables):
     table = tables[1][0]  # Use the second table
     for row in table:
-        if 'Make / Model /\nBody Type/\nSegment' in row:
-            idx = row.index('Make / Model /\nBody Type/\nSegment')
-            make_model_body_type = table[table.index(row) + 1][idx]
+        for cell in row:
+            normalized_cell = normalize_header(cell)
+            if normalized_cell == 'Make/Model/BodyType/Segment':
+                idx = row.index(cell)
+                make_model_body_type = table[table.index(row) + 1][idx]
 
-            if len(parts) == 3:
-                make = parts[0].strip()
-                model = parts[1].strip()
-                variant = parts[2].strip()
-                vehicle_type = 'none'
-            elif len(parts) == 5:
-                make = parts[0].strip()
-                model = parts[1].strip()
-                variant = ' '.join(parts[2:3]).strip()
-                vehicle_type = parts[4].strip()
-            else:
-                make = 'none'
-                model = 'none'
-                variant = 'none'
-                vehicle_type = 'none'
+                # Split the extracted value by '/'
+                parts = make_model_body_type.split('/')
 
-            return make, model, variant, vehicle_type
+                # Extract Make, Model, Variant, and Vehicle Type
+                if len(parts) == 3:
+                    make = parts[0].strip()
+                    model = parts[1].strip()
+                    variant = parts[2].strip()
+                    vehicle_type = 'none'
+                elif len(parts) == 5:
+                    make = parts[0].strip()
+                    model = parts[1].strip()
+                    variant = ' '.join(parts[2:3]).strip()
+                    vehicle_type = parts[4].strip()
+                else:
+                    make = 'none'
+                    model = 'none'
+                    variant = 'none'
+                    vehicle_type = 'none'
 
-            # Split the extracted value by '/'
-            parts = make_model_body_type.split('/')
-        if 'Make / Model / BodyType/ Segment' in row:
-            idx = row.index('Make / Model / BodyType/ Segment')
-            make_model_body_type = table[table.index(row) + 1][idx]
-            parts = make_model_body_type.split('/')
-
-            # Extract Make, Model, Variant, and Vehicle Type
-            if len(parts) == 3:
-                make = parts[0].strip()
-                model = parts[1].strip()
-                variant = parts[2].strip()
-                vehicle_type = 'none'
-            elif len(parts) == 5:
-                make = parts[0].strip()
-                model = parts[1].strip()
-                variant = ' '.join(parts[2:3]).strip()
-                vehicle_type = parts[4].strip()
-            else:
-                make = 'none'
-                model = 'none'
-                variant = 'none'
-                vehicle_type = 'none'
-
-            return make, model, variant, vehicle_type
+                return make, model, variant, vehicle_type
 
     return 'none', 'none', 'none', 'none'
 
@@ -234,5 +217,5 @@ def main(pdf_path):
     print("Details extracted and printed successfully.")
 
 if __name__ == '__main__':
-    pdf_path = r'C:\Users\user\pdfreader\TataAIG\TataAIG\TataAIG_GCV_test_pdfs\GCV_6301862975-00.pdf'
+    pdf_path = r'C:\Users\user\pdfreader\TataAIG\TataAIG\TataAIG_GCV_test_pdfs\GCV_6301862956-00.pdf'
     main(pdf_path)
